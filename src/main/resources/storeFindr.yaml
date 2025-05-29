@@ -1,0 +1,157 @@
+openapi: 3.0.0
+info:
+  title: Store Finder API
+  description: API for finding nearest stores based on geographic coordinates
+  version: 1.0.0
+  contact:
+    name: Jorge Castillo
+    email: castillo.guerra@gmail.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: /storefindr/v1
+
+paths:
+  /stores/nearby:
+    get:
+      summary: Find nearby stores
+      description: Returns stores near the specified latitude and longitude coordinates
+      operationId: findNearbyStores
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          description: Latitude of the search location
+          schema:
+            type: number
+            format: double
+            minimum: -90
+            maximum: 90
+        - name: longitude
+          in: query
+          required: true
+          description: Longitude of the search location
+          schema:
+            type: number
+            format: double
+            minimum: -180
+            maximum: 180
+      responses:
+        '200':
+          description: List of nearby stores found successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+        '400':
+          description: Bad Request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Store:
+      type: object
+      required:
+        - uuid
+        - addressName
+        - latitude
+        - longitude
+        - locationType
+      properties:
+        city:
+          type: string
+          description: City name where the store is located
+        postalCode:
+          type: string
+          description: Postal code of the store
+        street:
+          type: string
+          description: Street name
+        street2:
+          type: string
+          description: Street number or additional address info
+        street3:
+          type: string
+          description: Additional address information
+        addressName:
+          type: string
+          description: Full name of the store location
+        uuid:
+          type: string
+          description: Unique identifier for the store
+        longitude:
+          type: string
+          description: Store location longitude
+        latitude:
+          type: string
+          description: Store location latitude
+        complexNumber:
+          type: string
+          description: Internal complex identifier
+        showWarningMessage:
+          type: boolean
+          description: Flag indicating if store has special warnings
+        todayOpen:
+          type: string
+          description: Store opening time for today
+        locationType:
+          type: string
+          description: Type of store location
+        collectionPoint:
+          type: boolean
+          description: Indicates if store is a collection point
+        sapStoreID:
+          type: string
+          description: SAP system store identifier
+        todayClose:
+          type: string
+          description: Store closing time for today
+      example:
+        city: "'s Gravendeel"
+        postalCode: "3295 BD"
+        street: "Kerkstraat"
+        street2: "37"
+        street3: ""
+        addressName: "Jumbo 's Gravendeel Gravendeel Centrum"
+        uuid: "EOgKYx4XFiQAAAFJa_YYZ4At"
+        longitude: "4.615551"
+        latitude: "51.778461"
+        complexNumber: "33249"
+        showWarningMessage: true
+        todayOpen: "08:00"
+        locationType: "SupermarktPuP"
+        collectionPoint: true
+        sapStoreID: "3605"
+        todayClose: "20:00"
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_COORDINATES
+            - INTERNAL_ERROR
+          description: Error code for programmatic handling
+        message:
+          type: string
+          description: Human-readable error message
+      example:
+        code: INVALID_COORDINATES
+        message: "Latitude must be between -90 and 90 degrees"
