@@ -4,19 +4,19 @@ Feature: Find nearby stores
   I want to find stores near my location
   So that I can visit them
 
-  Scenario: Find stores within range
-    Given there are stores in the system:
-      | uuid                     | name                                    | latitude  | longitude | type         |
-      | EOgKYx4XFiQAAAFJa_YYZ4At | Jumbo 's Gravendeel Gravendeel Centrum | 51.778461 | 4.615551  | SupermarktPuP |
-      | EOgKYx4XFiQAAAFJa_YYZ4Bt | Jumbo Rotterdam Centrum                | 51.924420 | 4.477733  | SupermarktPuP |
+  Scenario: Find stores near a specific location
+    Given the full list of stores in the system
     When I search for stores near latitude 51.778000 and longitude 4.615000
-    Then I should receive a list of 1 store
-    And the store should be "Jumbo 's Gravendeel Gravendeel Centrum"
+    And the stores should be sorted by distance in the following order:
+      | order | storeName                              |
+      | 1     | Jumbo 's Gravendeel Gravendeel Centrum |
+      | 2     | Jumbo Dordrecht Slangenburg            |
+      | 3     | Jumbo Dordrecht P.A. de Kokplein       |
+      | 4     | Jumbo Zwijndrecht Walburg              |
+      | 5     | Jumbo Papendrecht Meent Passage        |
 
   Scenario: No stores found in range
-    Given there are stores in the system:
-      | uuid                     | name                                    | latitude  | longitude | type         |
-      | EOgKYx4XFiQAAAFJa_YYZ4At | Jumbo 's Gravendeel Gravendeel Centrum | 51.778461 | 4.615551  | SupermarktPuP |
+    Given the full list of stores in the system
     When I search for stores near latitude 52.778000 and longitude 5.615000
     Then I should receive an empty list of stores
 

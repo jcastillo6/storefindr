@@ -7,6 +7,9 @@ import com.jcastillo.storefindr.domain.OpeningHours;
 import com.jcastillo.storefindr.domain.Store;
 import com.jcastillo.storefindr.port.output.StoreRepository;
 import jakarta.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Repository;
 
@@ -18,9 +21,9 @@ import java.util.stream.Collectors;
 
 @Repository
 public class InMemoryStoreRepository implements StoreRepository {
-    // kilometers
-    public static final double EARTH_RADIUS = 6371;// 5km radius
-    public static final double MAX_DISTANCE = 5.0;
+    private static final Logger log = LoggerFactory.getLogger(InMemoryStoreRepository.class);
+    private static final double EARTH_RADIUS = 6371; // Radius of the Earth in kilometers
+    private static final int MAX_SIZE = 5;
     private final Map<String, Store> stores = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
 
@@ -63,27 +66,36 @@ public class InMemoryStoreRepository implements StoreRepository {
                         storeNode.get("showWarningMessage").asBoolean(),
                         openingHours,
                         storeNode.get("locationType").asText(),
-                        storeNode.has("collectionPoint") ?
-                                storeNode.get("collectionPoint").asBoolean() :
-                                false,
+                    storeNode.has("collectionPoint") && storeNode.get("collectionPoint").asBoolean(),
                         storeNode.get("sapStoreID").asText()
                 );
 
                 stores.put(store.uuid(), store);
+
             });
         } catch (IOException e) {
             throw new PersistenceException("Failed to load stores from JSON file", e);
         }
+        log.info("InMemoryStoreRepository initialized with {} stores", stores.size());
     }
 
     @Override
-    public Set<Store> findNearbyStores(double latitude, double longitude) {
+    public Set<Store> find5NearbyStores(double latitude, double longitude) {
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees and longitude must be between -180 and 180 degrees");
+        }
+
         return stores.values().stream()
-                .filter(store -> calculate(latitude, longitude, store))
-                .collect(Collectors.toSet());
+            .map(store -> Map.entry(store, calculateDistance(latitude, longitude, store)))
+            .sorted(Map.Entry.comparingByValue())
+            .limit(MAX_SIZE)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
-    private boolean calculate(double latitude, double longitude, Store store) {
+    private double calculateDistance(double latitude, double longitude, Store store) {
+        // Haversine formula to calculate the distance between two points on the Earth
+        // https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
         double storeLat = store.location().latitude();
         double storeLon = store.location().longitude();
 
@@ -91,13 +103,11 @@ public class InMemoryStoreRepository implements StoreRepository {
         double lonDistance = Math.toRadians(storeLon - longitude);
 
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(latitude))
-                * Math.cos(Math.toRadians(storeLat))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+            + Math.cos(Math.toRadians(latitude))
+            * Math.cos(Math.toRadians(storeLat))
+            * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
 
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = EARTH_RADIUS * c;
-
-        return distance <= MAX_DISTANCE;
+        return EARTH_RADIUS * c;
     }
 }

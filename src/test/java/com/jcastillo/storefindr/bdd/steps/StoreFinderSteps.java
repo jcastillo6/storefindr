@@ -1,24 +1,30 @@
 package com.jcastillo.storefindr.bdd.steps;
 
-import com.jcastillo.storefindr.bdd.config.CucumberSpringConfiguration;
-import com.jcastillo.storefindr.model.Store;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
-import java.util.List;
-import java.util.Map;
+import com.jcastillo.storefindr.bdd.config.CucumberSpringConfiguration;
+import com.jcastillo.storefindr.model.Error;
+import com.jcastillo.storefindr.model.Store;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 
-class StoreFinderSteps {
-    private TestRestTemplate restTemplate;
-    private CucumberSpringConfiguration config;
+public class StoreFinderSteps {
+    private final TestRestTemplate restTemplate;
+    private final CucumberSpringConfiguration config;
     private ResponseEntity<?> response;
 
     StoreFinderSteps(TestRestTemplate restTemplate,
@@ -41,13 +47,15 @@ class StoreFinderSteps {
 
     @Then("I should receive a list of {int} store")
     public void iShouldReceiveListOfStores(int count) {
-        assertEquals(200, response.getStatusCodeValue());
-        List<Store> stores = (List<Store>) response.getBody();
+        assertEquals(200, response.getStatusCode().value());
+        assertInstanceOf(List.class, response.getBody());
+        var stores = (List<Store>) response.getBody();
         assertEquals(count, stores.size());
     }
 
     @Then("the store should be {string}")
     public void theStoreShouldBe(String storeName) {
+        assertInstanceOf(List.class, response.getBody());
         List<Store> stores = (List<Store>) response.getBody();
         assertTrue(stores.stream()
                 .anyMatch(store -> store.getAddressName().equals(storeName)));
@@ -55,15 +63,42 @@ class StoreFinderSteps {
 
     @Then("I should receive an empty list of stores")
     public void iShouldReceiveEmptyList() {
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
+        assertInstanceOf(List.class, response.getBody());
         List<Store> stores = (List<Store>) response.getBody();
         assertTrue(stores.isEmpty());
     }
 
     @Then("I should receive an error with code {string}")
     public void iShouldReceiveError(String errorCode) {
-        assertEquals(400, response.getStatusCodeValue());
-        Map<String, String> error = (Map<String, String>) response.getBody();
-        assertEquals(errorCode, error.get("code"));
+        assertEquals(400, response.getStatusCode().value());
+        assertInstanceOf(Error.class, response.getBody());
+        var error = (Error) response.getBody();
+        assertEquals(errorCode, error.getCode().name());
+    }
+
+    @Given("the full list of stores in the system")
+    public void theFullListOfStoresInTheSystem() {
+        // This step is a placeholder for any setup needed before the tests run.
+        // In a real scenario, you might want to ensure that the database is populated with
+    }
+
+    @And("the stores should be sorted by distance in the following order:")
+    public void validateStoreResponse(DataTable dataTable) {
+        assertEquals(200, response.getStatusCode().value());
+        assertInstanceOf(List.class, response.getBody());
+        var storesResponse = (List<Store>) response.getBody();
+        assertEquals(5, storesResponse.size());
+        // Extract expected order from the DataTable (skip header row)
+        var expectedRows = dataTable.asMaps(String.class, String.class);
+        var expectedOrder = expectedRows.stream()
+            .map(row -> row.get("storeName"))
+            .toList();
+
+        var actualOrder = storesResponse.stream()
+            .map(Store::getAddressName)
+            .toList();
+
+        assertEquals(expectedOrder, actualOrder, "Stores are not sorted as expected");
     }
 }
