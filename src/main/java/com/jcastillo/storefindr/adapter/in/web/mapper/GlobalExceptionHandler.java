@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.jcastillo.storefindr.model.Error;
 
+import jakarta.validation.ConstraintViolationException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -26,5 +28,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Error> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new Error(INVALID_COORDINATES, ""));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Error> handleConstraintViolationException(ConstraintViolationException ex) {
+        String message = ex.getConstraintViolations().stream()
+            .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+            .reduce((m1, m2) -> m1 + "; " + m2)
+            .orElse("");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new Error(INVALID_COORDINATES, message));
     }
 }

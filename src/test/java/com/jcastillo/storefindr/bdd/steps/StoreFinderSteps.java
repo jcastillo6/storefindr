@@ -23,21 +23,21 @@ import io.cucumber.java.en.When;
 
 
 public class StoreFinderSteps {
+    private static final String PATH = "/stores/nearby?latitude=%s&longitude=%s";
     private final TestRestTemplate restTemplate;
-    private final CucumberSpringConfiguration config;
     private ResponseEntity<?> response;
+    private final String url;
 
     StoreFinderSteps(TestRestTemplate restTemplate,
                      CucumberSpringConfiguration config) {
         this.restTemplate = restTemplate;
-        this.config = config;
+        this.url = config.getBaseUrl() + PATH;
     }
 
     @When("I search for stores near latitude {double} and longitude {double}")
     public void iSearchForStoresNear(double latitude, double longitude) {
-        String url = config.getBaseUrl() + "/stores/nearby?latitude=" + latitude + "&longitude=" + longitude;
         response = restTemplate.exchange(
-                url,
+                url.formatted(latitude, longitude),
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<List<Store>>() {
@@ -79,8 +79,9 @@ public class StoreFinderSteps {
 
     @Given("the full list of stores in the system")
     public void theFullListOfStoresInTheSystem() {
-        // This step is a placeholder for any setup needed before the tests run.
-        // In a real scenario, you might want to ensure that the database is populated with
+        // This step is a placeholder for any setup needed before searching for stores.
+        // The actual store data is loaded from the in-memory repository during application startup.
+        // No action is needed here as the repository is already initialized with the store data.
     }
 
     @And("the stores should be sorted by distance in the following order:")
@@ -100,5 +101,16 @@ public class StoreFinderSteps {
             .toList();
 
         assertEquals(expectedOrder, actualOrder, "Stores are not sorted as expected");
+    }
+
+    @When("I search for stores with an invalid latitude {double} and longitude {double}")
+    public void iSearchForStoresWithAnInvalidLatitudeAndLongitude(double latitude, double longitude) {
+        response = restTemplate.exchange(
+                url.formatted(latitude, longitude),
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<Error>() {
+                }
+        );
     }
 }

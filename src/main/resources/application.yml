@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: storefindr
+
+logging:
+  level:
+    org:
+      springframework: INFO
+
+server:
+  port: 8080

@@ -6,6 +6,7 @@ import com.jcastillo.storefindr.domain.Location;
 import com.jcastillo.storefindr.domain.OpeningHours;
 import com.jcastillo.storefindr.domain.Store;
 import com.jcastillo.storefindr.port.output.StoreRepository;
+
 import jakarta.annotation.PostConstruct;
 
 import org.slf4j.Logger;
@@ -40,34 +41,34 @@ public class InMemoryStoreRepository implements StoreRepository {
 
             storesList.forEach(storeNode -> {
                 Address address = new Address(
-                        storeNode.get("city").asText(),
-                        storeNode.get("postalCode").asText(),
-                        storeNode.get("street").asText(),
-                        storeNode.get("street2").asText(),
-                        storeNode.get("street3").asText()
+                    storeNode.get("city").asText(),
+                    storeNode.get("postalCode").asText(),
+                    storeNode.get("street").asText(),
+                    storeNode.get("street2").asText(),
+                    storeNode.get("street3").asText()
                 );
 
                 Location location = new Location(
-                        Double.parseDouble(storeNode.get("latitude").asText()),
-                        Double.parseDouble(storeNode.get("longitude").asText())
+                    Double.parseDouble(storeNode.get("latitude").asText()),
+                    Double.parseDouble(storeNode.get("longitude").asText())
                 );
 
                 OpeningHours openingHours = new OpeningHours(
-                        storeNode.get("todayOpen").asText(),
-                        storeNode.get("todayClose").asText()
+                    storeNode.get("todayOpen").asText(),
+                    storeNode.get("todayClose").asText()
                 );
 
                 Store store = new Store(
-                        storeNode.get("uuid").asText(),
-                        storeNode.get("addressName").asText(),
-                        address,
-                        location,
-                        storeNode.get("complexNumber").asText(),
-                        storeNode.get("showWarningMessage").asBoolean(),
-                        openingHours,
-                        storeNode.get("locationType").asText(),
+                    storeNode.get("uuid").asText(),
+                    storeNode.get("addressName").asText(),
+                    address,
+                    location,
+                    storeNode.get("complexNumber").asText(),
+                    storeNode.get("showWarningMessage").asBoolean(),
+                    openingHours,
+                    storeNode.get("locationType").asText(),
                     storeNode.has("collectionPoint") && storeNode.get("collectionPoint").asBoolean(),
-                        storeNode.get("sapStoreID").asText()
+                    storeNode.get("sapStoreID").asText()
                 );
 
                 stores.put(store.uuid(), store);
